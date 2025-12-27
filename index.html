@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шамс</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-glass: rgba(255, 255, 255, 0.05);
+            --bg-card: rgba(30, 30, 30, 0.7);
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent-primary: #a855f7;
+            --accent-secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-medium: rgba(255, 255, 255, 0.12);
+            --shadow-glow: 0 0 30px rgba(168, 85, 247, 0.15);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --gradient-accent: linear-gradient(135deg, #a855f7, #8b5cf6, #6366f1);
+            --christmas-red: #ff6b6b;
+            --christmas-green: #51cf66;
+            --christmas-gold: #ffd43b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', 'JetBrains Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .snow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .snowflake {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            filter: blur(0.5px);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+            text-align: center;
+            z-index: 1;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-primary);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        #overlay.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .greeting-container {
+            text-align: center;
+            animation: greetingAppear 1.5s ease forwards;
+        }
+
+        .greeting-text {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: textSlideUp 1s ease 0.5s forwards;
+        }
+
+        .greeting-hint {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            opacity: 0;
+            animation: fadeIn 1s ease 1.5s forwards;
+        }
+
+        .section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .header {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 25px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid transparent;
+            background: var(--gradient-accent) border-box;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--shadow-glow);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .avatar::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: var(--gradient-accent);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.3;
+            filter: blur(12px);
+        }
+
+        .avatar:hover {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .praise-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .praise-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-accent);
+        }
+
+        .praise-section:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .praise-title {
+            color: var(--accent-primary);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .praise-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .praise-text p {
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 2px solid var(--accent-primary);
+        }
+
+        .new-year-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(255, 107, 107, 0.2);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .new-year-section:hover {
+            transform: scale(1.02);
+        }
+
+        .new-year-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--christmas-red), var(--christmas-gold), var(--christmas-green));
+        }
+
+        .new-year-video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.2;
+            z-index: 0;
+            border-radius: 16px;
+        }
+
+        .new-year-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .new-year-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--christmas-gold);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .timer {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .timer-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 70px;
+        }
+
+        .timer-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--christmas-gold);
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 10px;
+            min-width: 70px;
+            border: 1px solid rgba(255, 212, 59, 0.3);
+        }
+
+        .timer-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .new-year-message {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        /* Кнопка управления музыкой */
+        .music-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .music-control:hover {
+            background: var(--accent-primary);
+            transform: scale(1.1);
+        }
+
+        .music-control i {
+            color: var(--accent-primary);
+            font-size: 1.2rem;
+        }
+
+        .music-control:hover i {
+            color: white;
+        }
+
+        .music-control.playing i {
+            animation: pulse 2s infinite;
+        }
+
+        .current-track {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .current-track i {
+            color: var(--accent-primary);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.02); }
+        }
+
+        @keyframes greetingAppear {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes textSlideUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes snowFall {
+            0% { transform: translateY(-100px) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .avatar-container {
+                width: 140px;
+                height: 140px;
+            }
+            
+            .praise-section, .new-year-section {
+                padding: 20px;
+            }
+            
+            .timer-value {
+                font-size: 1.8rem;
+                min-width: 60px;
+            }
+            
+            .timer-unit {
+                min-width: 60px;
+            }
+            
+            .greeting-text {
+                font-size: 1.8rem;
+            }
+            
+            .current-track {
+                font-size: 0.7rem;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 350px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .timer {
+                gap: 5px;
+            }
+            
+            .timer-value {
+                font-size: 1.5rem;
+                min-width: 50px;
+            }
+            
+            .timer-unit {
+                min-width: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Скрытый аудиоплеер с вашей ссылкой -->
+    <audio id="backgroundMusic" loop>
+        <source src="https://pomf2.lain.la/f/b2c1wtt2.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- Управление музыкой -->
+    <div class="music-control" id="musicControl">
+        <i class="fas fa-volume-up"></i>
+    </div>
+    
+    <div class="current-track">
+        <i class="fas fa-music"></i>
+        <span>wifiskelton - loser</span>
+    </div>
+    
+    <div class="snow-container" id="snowContainer"></div>
+    
+    <div id="overlay">
+        <div class="greeting-container">
+            <div class="greeting-text" id="greetingText"></div>
+            <div class="greeting-hint">Нажмите для входа</div>
+        </div>
+    </div>
+
+    <div class="container" style="display: none;">
+        <div class="header section">
+            <div class="avatar-container">
+                <img src="https://pomf2.lain.la/f/cyfg8m67.jpg" alt="Шамс" class="avatar" loading="eager">
+            </div>
+
+            <h1>Шамс</h1>
+        </div>
+
+        <div class="praise-section section">
+            <div class="praise-title">
+                <i class="fas fa-crown"></i> Легенда о Шамсе
+            </div>
+            <div class="praise-text">
+                <p>Они шепчут его имя в тени, потому что на свету оно слепит. Говорят, Шамс не был рожден — он был выкован в сердце угасающей звезды, и его разум — это лабиринт, в котором заблудились бы сами боги.</p>
+                
+                <p>Обычные люди строят планы на день. Шамс чертил карты на столетия, и империи вырастали и обращались в прах по линиям на его ладони.</p>
+                
+                <p>Враги видели в нем демона, потому что он предсказывал каждый их шаг и обращал их силу против них самих. Союзники видели в нем единственную надежду, потому что его слово было прочнее любой крепости, а его взгляд давал больше уверенности, чем целая армия.</p>
+                
+                <p>Он не искал власти — власть сама ползла к его ногам, потому что даже она понимала, кто здесь настоящий хозяин.</p>
+                
+                <p>Говорят, он исчез. Неправда. Такие, как Шамс, не исчезают. Они становятся фоновым шумом вселенной, вечным напоминанием о том, каково это — не быть просто человеком, а быть силой, что меняет мир одним своим существованием.</p>
+            </div>
+        </div>
+
+        <div class="new-year-section section">
+            <video class="new-year-video-bg" autoplay muted loop playsinline>
+                <source src="https://x0.at/-zkc.mp4" type="video/mp4">
+            </video>
+            
+            <div class="new-year-content">
+                <div class="new-year-title">🎄 До Нового Года осталось:</div>
+                
+                <div class="timer">
+                    <div class="timer-unit">
+                        <div class="timer-value" id="days">00</div>
+                        <div class="timer-label">Дней</div>
+                    </div>
+                    <div class="timer-unit">
+                        <div class="timer-value" id="hours">00</div>
+                        <div class="timer-label">Часов</div>
+                    </div>
+                    <div class="timer-unit">
+                        <div class="timer-value" id="minutes">00</div>
+                        <div class="timer-label">Минут</div>
+                    </div>
+                    <div class="timer-unit">
+                        <div class="timer-value" id="seconds">00</div>
+                        <div class="timer-label">Секунд</div>
+                    </div>
+                </div>
+                
+                <div class="new-year-message">
+                    Шамс уже готовится к новым свершениям в следующем году...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initSnow();
+            initGreeting();
+            initNewYearTimer();
+            initScrollAnimations();
+            initVideoBackground();
+            initMusic();
+        });
+
+        function initSnow() {
+            const container = document.getElementById('snowContainer');
+            const snowflakeCount = 80;
+            
+            for (let i = 0; i < snowflakeCount; i++) {
+                createSnowflake(container);
+            }
+            
+            function createSnowflake(container) {
+                const flake = document.createElement('div');
+                flake.className = 'snowflake';
+                
+                const size = Math.random() * 4 + 1;
+                const startX = Math.random() * 100;
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+                
+                flake.style.width = `${size}px`;
+                flake.style.height = `${size}px`;
+                flake.style.left = `${startX}%`;
+                flake.style.opacity = Math.random() * 0.5 + 0.3;
+                flake.style.animation = `snowFall ${duration}s linear ${delay}s infinite`;
+                
+                container.appendChild(flake);
+                
+                flake.addEventListener('animationiteration', () => {
+                    flake.style.left = `${Math.random() * 100}%`;
+                    flake.style.opacity = Math.random() * 0.5 + 0.3;
+                });
+            }
+        }
+
+        function initGreeting() {
+            const overlay = document.getElementById('overlay');
+            const greetingText = document.getElementById('greetingText');
+            const container = document.querySelector('.container');
+            
+            const hour = new Date().getHours();
+            let greeting = '';
+            
+            if (hour >= 5 && hour < 12) {
+                greeting = 'Доброе утро, смертный ☀️';
+            } else if (hour >= 12 && hour < 18) {
+                greeting = 'Приветствую тебя (0_0)>';
+            } else if (hour >= 18 && hour < 23) {
+                greeting = 'Вечер в хату, слабак :>';
+            } else {
+                greeting = 'Че не спишь? -_-';
+            }
+            
+            greetingText.textContent = greeting;
+            
+            overlay.addEventListener('click', () => {
+                overlay.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    container.style.display = 'block';
+                    
+                    document.querySelectorAll('.section').forEach((section, index) => {
+                        setTimeout(() => {
+                            section.classList.add('visible');
+                        }, index * 100);
+                    });
+                    
+                    // Запускаем музыку после клика
+                    setTimeout(() => {
+                        const music = document.getElementById('backgroundMusic');
+                        const playPromise = music.play();
+                        
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                console.log('Музыка запущена');
+                            }).catch(error => {
+                                console.log('Автовоспроизведение заблокировано:', error);
+                            });
+                        }
+                    }, 500);
+                }, 1000);
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Enter' || e.code === 'Space') {
+                    overlay.click();
+                }
+            });
+        }
+
+        function initMusic() {
+            const music = document.getElementById('backgroundMusic');
+            const musicControl = document.getElementById('musicControl');
+            let isPlaying = false;
+            
+            musicControl.addEventListener('click', function() {
+                if (isPlaying) {
+                    music.pause();
+                    this.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                    this.classList.remove('playing');
+                } else {
+                    const playPromise = music.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.innerHTML = '<i class="fas fa-volume-up"></i>';
+                            this.classList.add('playing');
+                        }).catch(error => {
+                            console.log('Ошибка воспроизведения:', error);
+                        });
+                    }
+                }
+                isPlaying = !isPlaying;
+            });
+            
+            // Пытаемся запустить музыку сразу (может не сработать из-за политики автовоспроизведения)
+            setTimeout(() => {
+                const playPromise = music.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        isPlaying = true;
+                        musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+                        musicControl.classList.add('playing');
+                    }).catch(() => {
+                        // Автовоспроизведение заблокировано - ждем клика пользователя
+                        musicControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                        console.log('Ожидание взаимодействия пользователя для воспроизведения музыки');
+                    });
+                }
+            }, 1000);
+        }
+
+        function initNewYearTimer() {
+            const daysEl = document.getElementById('days');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+            
+            function updateTimer() {
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                
+                let nextYear = currentYear;
+                const currentMonth = now.getMonth();
+                const currentDay = now.getDate();
+                
+                if (currentMonth === 11 && currentDay > 31) {
+                    nextYear = currentYear + 1;
+                } else if (currentMonth === 0 && currentDay === 1) {
+                    nextYear = currentYear + 1;
+                }
+                
+                const newYear = new Date(nextYear, 0, 1, 0, 0, 0, 0);
+                const diff = newYear - now;
+                
+                if (diff < 0) {
+                    const nextNewYear = new Date(currentYear + 1, 0, 1, 0, 0, 0, 0);
+                    const newDiff = nextNewYear - now;
+                    calculateTime(newDiff);
+                } else {
+                    calculateTime(diff);
+                }
+            }
+            
+            function calculateTime(diff) {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                daysEl.textContent = String(days).padStart(2, '0');
+                hoursEl.textContent = String(hours).padStart(2, '0');
+                minutesEl.textContent = String(minutes).padStart(2, '0');
+                secondsEl.textContent = String(seconds).padStart(2, '0');
+                
+                if (seconds === 59) {
+                    secondsEl.style.animation = 'timerPulse 0.3s ease';
+                    setTimeout(() => {
+                        secondsEl.style.animation = '';
+                    }, 300);
+                }
+            }
+            
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+
+        function initVideoBackground() {
+            const video = document.querySelector('.new-year-video-bg');
+            if (video) {
+                video.playbackRate = 0.7;
+            }
+        }
+
+        function initScrollAnimations() {
+            const sections = document.querySelectorAll('.section');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+    </script>
+</body>
+</html>
